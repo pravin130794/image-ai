@@ -6,6 +6,7 @@ import { handleError } from "../utils";
 import User from "../database/models/user.model";
 import Image from "../database/models/image.model";
 import { redirect } from "next/navigation";
+import { ObjectId } from 'mongodb';
 
 import { v2 as cloudinary } from 'cloudinary'
 
@@ -93,10 +94,11 @@ export async function getImageById(imageId: string) {
 }
 
 // GET IMAGES
-export async function getAllImages({ limit = 9, page = 1, searchQuery = '' }: {
+export async function getAllImages({ limit = 9, page = 1, searchQuery = '',userId }: {
   limit?: number;
   page: number;
   searchQuery?: string;
+  userId?: string;
 }) {
   try {
     await connectToDatabase();
@@ -120,13 +122,18 @@ export async function getAllImages({ limit = 9, page = 1, searchQuery = '' }: {
 
     const resourceIds = resources.map((resource: any) => resource.public_id);
 
-    let query = {};
+    let query = { };
 
     if(searchQuery) {
       query = {
         publicId: {
           $in: resourceIds
-        }
+        },
+         _id: new ObjectId(userId) 
+      }
+    }else{
+      query = {
+         author: new ObjectId(userId) 
       }
     }
 

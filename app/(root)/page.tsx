@@ -1,14 +1,22 @@
 import { Collection } from "@/components/shared/Collection";
 import { navLinks } from "@/constants";
 import { getAllImages } from "@/lib/actions/image.actions";
+import { getUserById } from "@/lib/actions/user.actions";
+import { SignedIn, auth } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 const Home = async ({ searchParams }: SearchParamProps) => {
+  const { userId } = auth();
   const page = Number(searchParams?.page) || 1;
   const searchQuery = (searchParams?.query as string) || "";
-
-  const images = await getAllImages({ page, searchQuery });
+  if (userId) {
+    const user = await getUserById(userId);
+    var images = await getAllImages({ page, searchQuery, userId: user._id });
+  } else {
+    var images = await getAllImages({ page, searchQuery });
+  }
 
   return (
     <>
@@ -16,7 +24,7 @@ const Home = async ({ searchParams }: SearchParamProps) => {
         <h1 className="home-heading">
           Unleash Your Creative Vision with Imaginify
         </h1>
-        <ul className="flex-center w-full gap-20">
+        <ul className="sm:flex-center flex-wrap w-full gap-20">
           {navLinks.slice(1, 5).map((link) => (
             <Link
               key={link.route}
@@ -32,14 +40,16 @@ const Home = async ({ searchParams }: SearchParamProps) => {
         </ul>
       </section>
 
-      <section className="sm:mt-12">
-        <Collection
-          hasSearch={true}
-          images={images?.data}
-          totalPages={images?.totalPage}
-          page={page}
-        />
-      </section>
+      <SignedIn>
+        <section className="sm:mt-12">
+          <Collection
+            hasSearch={true}
+            images={images?.data}
+            totalPages={images?.totalPage}
+            page={page}
+          />
+        </section>
+      </SignedIn>
     </>
   );
 };
